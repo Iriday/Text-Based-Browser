@@ -1,9 +1,12 @@
 import sys
 import os
+from _collections import deque
 
-# test pages
-nytimes_com = "This New Liquid Is Magnetic, and Mesmerizing\n\nScientists have created...\nMost Wikipedia Profiles Are...\n...has added nearly 700 Wikipedia biographies for important.."
-bloomberg_com = "The Space Race: From Apollo 11...\n\nIt's 50 years since...\nTwitter CEO...\nTwitter and Square Chief Executive Officer..."
+# temp  test pages
+nytimes_com = "page1\ndata.."
+bloomberg_com = "page2\ndata.."
+google_com = "page3\ndata.."
+test_pages = {"bloomberg.com": bloomberg_com, "nytimes.com": nytimes_com, "google.com": google_com}
 
 
 def save_tab_content_to_file(path, page_content):
@@ -31,25 +34,52 @@ def run():
     else:
         create_directory(args[1])  # directory for tabs
 
+    tab_history = deque()
+    tab_history_index = -1
     # main loop
     while True:
-        input_ = input()
+        in_ = input()
+        in_lower = in_.lower()
 
-        if input_.lower() == "exit":
+        if in_lower == "exit":
             return
-        if input_.__contains__('.'):  # url
-            if input_ == "bloomberg.com":
-                print(bloomberg_com)
-                save_tab_content_to_file(args[1] + "\\" + input_[:input_.rindex(".")] + ".txt", bloomberg_com)
-            elif input_ == "nytimes.com":
-                print(nytimes_com)
-                save_tab_content_to_file(args[1] + "\\" + input_[:input_.rindex(".")] + ".txt", nytimes_com)
+        if in_.__contains__('.'):  # url
+            if in_ in test_pages:
+                print(test_pages[in_])
+
+                filepath = args[1] + "\\" + in_[:in_.rindex(".")] + ".txt"
+                save_tab_content_to_file(filepath, test_pages[in_])
+
+                if tab_history_index == -1 or tab_history[tab_history_index] != filepath:
+                    while len(tab_history) - 1 != tab_history_index:
+                        tab_history.pop()
+                    tab_history.append(filepath)
+                    tab_history_index += 1
             else:
                 print("Error, incorrect input, please try again\n")
             continue
+        elif in_lower == "b" or in_lower == "back" or in_lower == "f" or in_lower == "forward":
+            if in_lower == "b" or in_lower == "back":
+                if tab_history_index == 0 or tab_history_index == -1:
+                    continue
+                tab_history_index -= 1
+            else:
+                if tab_history_index == tab_history.__len__() - 1:
+                    continue
+                tab_history_index += 1
+
+            print(*load_tab_content_from_file(tab_history[tab_history_index]), sep="")
+            continue
 
         try:  # tab
-            page_content = load_tab_content_from_file(args[1] + "\\" + input_ + ".txt")
+            filepath = args[1] + "\\" + in_ + ".txt"
+            page_content = load_tab_content_from_file(filepath)
+
+            if tab_history_index == -1 or tab_history[tab_history_index] != filepath:
+                while len(tab_history) - 1 != tab_history_index:
+                    tab_history.pop()
+                tab_history.append(filepath)
+                tab_history_index += 1
         except FileNotFoundError:
             print("Error, incorrect input, please try again\n")
         else:
