@@ -1,21 +1,16 @@
 import sys
 import os
+import requests
 from _collections import deque
-
-# temp  test pages
-nytimes_com = "page1\ndata.."
-bloomberg_com = "page2\ndata.."
-google_com = "page3\ndata.."
-test_pages = {"bloomberg.com": bloomberg_com, "nytimes.com": nytimes_com, "google.com": google_com}
 
 
 def save_tab_content_to_file(path, page_content):
-    with open(path, "w") as file:
+    with open(path, "w", encoding="utf-8") as file:
         file.write(page_content)
 
 
 def load_tab_content_from_file(path):
-    with open(path, "r") as file:
+    with open(path, "r", encoding="utf-8") as file:
         return file.readlines()
 
 
@@ -24,6 +19,12 @@ def create_directory(path):
         return
     else:
         os.makedirs(path)
+
+
+def url_to_filename(url):
+    name = url[:url.rindex(".")]
+    name = name[name.rindex("/") + 1:]
+    return name + ".txt"
 
 
 def run():
@@ -43,12 +44,36 @@ def run():
 
         if in_lower == "exit":
             return
-        if in_.__contains__('.'):  # url
-            if in_ in test_pages:
-                print(test_pages[in_])
 
-                filepath = args[1] + "\\" + in_[:in_.rindex(".")] + ".txt"
-                save_tab_content_to_file(filepath, test_pages[in_])
+        # tab
+        filepath = args[1] + "\\" + in_ + ".txt"
+        if os.path.exists(filepath):
+            page_content = load_tab_content_from_file(filepath)
+
+            if tab_history_index == -1 or tab_history[tab_history_index] != filepath:
+                while len(tab_history) - 1 != tab_history_index:
+                    tab_history.pop()
+                tab_history.append(filepath)
+                tab_history_index += 1
+
+                print(*page_content, sep="")
+
+        elif in_.__contains__('.'):  # url
+            url = in_
+            if not url.startswith("http"):
+                url = "https://" + url
+            try:
+                response = requests.get(url)
+            except IOError:
+                print("Error, something went wrong\n")
+                continue
+            # response.encoding = "utf-8"
+
+            if requests:
+                print(response.text)
+
+                filepath = args[1] + "\\" + url_to_filename(url)
+                save_tab_content_to_file(filepath, response.text)
 
                 if tab_history_index == -1 or tab_history[tab_history_index] != filepath:
                     while len(tab_history) - 1 != tab_history_index:
@@ -56,8 +81,8 @@ def run():
                     tab_history.append(filepath)
                     tab_history_index += 1
             else:
-                print("Error, incorrect input, please try again\n")
-            continue
+                print("Error, something went wrong_\n")
+
         elif in_lower == "b" or in_lower == "back" or in_lower == "f" or in_lower == "forward":
             if in_lower == "b" or in_lower == "back":
                 if tab_history_index == 0 or tab_history_index == -1:
@@ -69,21 +94,9 @@ def run():
                 tab_history_index += 1
 
             print(*load_tab_content_from_file(tab_history[tab_history_index]), sep="")
-            continue
 
-        try:  # tab
-            filepath = args[1] + "\\" + in_ + ".txt"
-            page_content = load_tab_content_from_file(filepath)
-
-            if tab_history_index == -1 or tab_history[tab_history_index] != filepath:
-                while len(tab_history) - 1 != tab_history_index:
-                    tab_history.pop()
-                tab_history.append(filepath)
-                tab_history_index += 1
-        except FileNotFoundError:
-            print("Error, incorrect input, please try again\n")
         else:
-            print(*page_content, sep="")
+            print("Error, incorrect input, please try again\n")
 
 
 run()
