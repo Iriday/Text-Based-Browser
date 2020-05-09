@@ -1,6 +1,7 @@
 import sys
 import os
 import requests
+import re
 from _collections import deque
 
 
@@ -22,9 +23,10 @@ def create_directory(path):
 
 
 def url_to_filename(url):
-    name = url[:url.rindex(".")]
-    name = name[name.rindex("/") + 1:]
-    return name + ".txt"
+    name = url[:50]
+    name = name.lstrip("htps:").lstrip("/")
+    name = re.sub("[/?]+", "_", name)
+    return f"{name}__{url.__hash__()}.txt"
 
 
 def run():
@@ -39,26 +41,14 @@ def run():
     tab_history_index = -1
     # main loop
     while True:
-        in_ = input()
+        in_ = input().strip()
         in_lower = in_.lower()
 
         if in_lower == "exit":
             return
 
-        # tab
-        filepath = args[1] + "\\" + in_ + ".txt"
-        if os.path.exists(filepath):
-            page_content = load_tab_content_from_file(filepath)
-
-            if tab_history_index == -1 or tab_history[tab_history_index] != filepath:
-                while len(tab_history) - 1 != tab_history_index:
-                    tab_history.pop()
-                tab_history.append(filepath)
-                tab_history_index += 1
-
-                print(*page_content, sep="")
-
-        elif in_.__contains__('.'):  # url
+        # url
+        if in_.__contains__('.'):
             url = in_
             if not url.startswith("http"):
                 url = "https://" + url
@@ -75,14 +65,15 @@ def run():
                 filepath = args[1] + "\\" + url_to_filename(url)
                 save_tab_content_to_file(filepath, response.text)
 
-                if tab_history_index == -1 or tab_history[tab_history_index] != filepath:
+                if tab_history_index == -1 or tab_history[tab_history_index] != url:
                     while len(tab_history) - 1 != tab_history_index:
                         tab_history.pop()
-                    tab_history.append(filepath)
+                    tab_history.append(url)
                     tab_history_index += 1
             else:
                 print("Error, something went wrong_\n")
 
+        # move to prev/next page
         elif in_lower == "b" or in_lower == "back" or in_lower == "f" or in_lower == "forward":
             if in_lower == "b" or in_lower == "back":
                 if tab_history_index == 0 or tab_history_index == -1:
@@ -93,7 +84,7 @@ def run():
                     continue
                 tab_history_index += 1
 
-            print(*load_tab_content_from_file(tab_history[tab_history_index]), sep="")
+            print(*load_tab_content_from_file(args[1] + "\\" + url_to_filename(tab_history[tab_history_index])), sep="")
 
         else:
             print("Error, incorrect input, please try again\n")
