@@ -32,7 +32,14 @@ def url_to_filename(url):
 
 def parse_page(component):
     bs = BeautifulSoup(component, "html.parser")
-    return list(map(lambda val: val.text, bs.find_all(["p", "h1", "h2", "h3", "h4", "h5", "h6", "a", "ul", "ol", "li"])))
+    data = []
+    for val in bs.find_all(["p", "h1", "h2", "h3", "h4", "h5", "h6", "a", "ul", "ol", "li"]):
+        text = val.text
+        href = val.get("href")
+        if href:
+            text += " -> " + href
+        data.append(text)
+    return data
 
 
 def run():
