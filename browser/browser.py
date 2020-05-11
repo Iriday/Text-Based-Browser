@@ -2,6 +2,7 @@ import sys
 import os
 import requests
 import re
+import colorama
 from _collections import deque
 from bs4 import BeautifulSoup
 
@@ -34,11 +35,11 @@ def parse_page(component):
     bs = BeautifulSoup(component, "html.parser")
     data = []
     for val in bs.find_all(["p", "h1", "h2", "h3", "h4", "h5", "h6", "a", "ul", "ol", "li"]):
-        text = val.text
         href = val.get("href")
         if href:
-            text += " -> " + href
-        data.append(text)
+            data.append(colorama.Fore.BLUE + val.text + " -> " + href)
+        else:
+            data.append(colorama.Fore.BLACK + val.text)
     return data
 
 
