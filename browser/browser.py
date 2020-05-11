@@ -3,6 +3,7 @@ import os
 import requests
 import re
 from _collections import deque
+from bs4 import BeautifulSoup
 
 
 def save_tab_content_to_file(path, page_content):
@@ -27,6 +28,11 @@ def url_to_filename(url):
     name = name.lstrip("htps:").lstrip("/")
     name = re.sub("[/?]+", "_", name)
     return f"{name}__{url.__hash__()}.txt"
+
+
+def parse_page(component):
+    bs = BeautifulSoup(component, "html.parser")
+    return list(map(lambda val: val.text, bs.find_all(["p", "h1", "h2", "h3", "h4", "h5", "h6", "a", "ul", "ol", "li"])))
 
 
 def run():
@@ -60,10 +66,11 @@ def run():
             # response.encoding = "utf-8"
 
             if requests:
-                print(response.text)
+                parsed = "\n".join(parse_page(response.content))
+                print(parsed)
 
                 filepath = args[1] + "\\" + url_to_filename(url)
-                save_tab_content_to_file(filepath, response.text)
+                save_tab_content_to_file(filepath, parsed)
 
                 if tab_history_index == -1 or tab_history[tab_history_index] != url:
                     while len(tab_history) - 1 != tab_history_index:
